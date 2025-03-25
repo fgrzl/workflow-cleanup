@@ -1,0 +1,34 @@
+name: 'Cleanup Workflow History'
+description: 'Deletes old GitHub Actions workflow runs based on age.'
+author: 'smiggleworth'
+
+inputs:
+  days_old:
+    description: 'Number of days to keep workflow runs (runs older than this will be deleted)'
+    required: false
+    default: '7'
+  per_page:
+    description: 'Number of workflow runs to fetch per request (max 100)'
+    required: false
+    default: '50'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Delete Old Workflow Runs
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        # Calculate cutoff date based on days_old
+        CUTOFF_DATE=$(date -u -d "-${{ inputs.days_old }} days" +%Y-%m-%dT%H:%M:%SZ)
+
+        # Use gh CLI to list and delete old workflow runs
+        gh run list \
+          --limit ${{ inputs.per_page }} \
+          --json databaseId,name,createdAt \
+          --jq ".[] | select(.createdAt < \"$CUTOFF_DATE\") | .databaseId" | \
+        while read -r ID; do
+          echo "Deleting workflow run ID=$ID"
+          gh run delete "$ID" && echo "Successfully deleted ID=$ID" || echo "Failed to delete ID=$ID"
+        done
