@@ -2,6 +2,10 @@ name: 'Cleanup Workflow History'
 description: 'Deletes old GitHub Actions workflow runs based on age.'
 author: 'smiggleworth'
 
+branding:
+  icon: 'trash'
+  color: 'red'
+
 inputs:
   days_old:
     description: 'Number of days to keep workflow runs (runs older than this will be deleted)'
