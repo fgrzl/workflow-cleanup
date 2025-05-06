@@ -24,15 +24,22 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-        # Calculate cutoff date based on days_old
         CUTOFF_DATE=$(date -u -d "-${{ inputs.days_old }} days" +%Y-%m-%dT%H:%M:%SZ)
-
-        # Use gh CLI to list and delete old workflow runs
-        gh run list \
-          --limit ${{ inputs.per_page }} \
-          --json databaseId,name,createdAt \
-          --jq ".[] | select(.createdAt < \"$CUTOFF_DATE\") | .databaseId" | \
-        while read -r ID; do
-          echo "Deleting workflow run ID=$ID"
-          gh run delete "$ID" && echo "Successfully deleted ID=$ID" || echo "Failed to delete ID=$ID"
+        
+        while true; do
+          IDS=$(gh run list \
+            --limit ${{ inputs.per_page }} \
+            --json databaseId,createdAt \
+            --jq ".[] | select(.createdAt < \"$CUTOFF_DATE\") | .databaseId")
+        
+          if [ -z "$IDS" ]; then
+            echo "No more old runs to delete."
+            break
+          fi
+        
+          echo "$IDS" | while read -r ID; do
+            echo "Deleting workflow run ID=$ID"
+            gh run delete "$ID" --yes && echo "Deleted ID=$ID" || echo "Failed to delete ID=$ID"
+          done
         done
+
