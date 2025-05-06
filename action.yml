@@ -39,7 +39,7 @@ runs:
         
           echo "$IDS" | while read -r ID; do
             echo "Deleting workflow run ID=$ID"
-            gh run delete "$ID" --yes && echo "Deleted ID=$ID" || echo "Failed to delete ID=$ID"
+            gh run delete "$ID" && echo "Deleted ID=$ID" || echo "Failed to delete ID=$ID"
           done
         done
 
